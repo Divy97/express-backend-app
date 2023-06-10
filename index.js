@@ -35,7 +35,6 @@ const QUESTIONS = [
     },
 ];
 
-
 const SUBMISSION = [
 
 ]
@@ -43,27 +42,30 @@ const SUBMISSION = [
 // Middleware to parse the request body
 app.use(express.json());
 
+
 app.get('/', function (req, res) {
     res.send("Hello, Welcome to the LeetCode Clone")
 })
 
 app.post('/signup', function (req, res) {
-    // Add logic to decode body
-    const { email, password } = req.body;
+    // Decode the request body
+    const { email, password, role } = req.body;
 
-    //Store email and password (as is for now) in the USERS array above (only if the user with the given email doesn't exist)
-
+    // Check if the email already exists in the USERS array
     const userExists = USERS.some(user => user.email === email);
     if (userExists) {
         return res.status(400).json({ error: 'User with this email already exists' });
     }
 
-    const newUser = { email, password };
+    // Create a new user object with role
+    const newUser = { email, password, role };
+
+    // Store the new user in the USERS array
     USERS.push(newUser);
 
-    // return back 200 status code to the client
+    // Return a success response
     res.status(200).json({ message: 'Signup successful' });
-})
+});
 
 app.post('/login', function (req, res) {
     // Decode the request body
@@ -74,43 +76,71 @@ app.post('/login', function (req, res) {
 
     // Check if the user exists and the password matches
     if (user && user.password === password) {
-        // Generate a random token (for demonstration purposes only)
-        const token = Math.random().toString(36).substring(7);
-
-        // Return a success response with the token
-        res.status(200).json({ message: 'Login successful', token });
+        // Return a success response with the user role
+        res.status(200).json({ message: 'Login successful', role: user.role });
     } else {
         // Return an unauthorized response
         res.status(401).json({ error: 'Invalid email or password' });
     }
-})
-
-app.get('/questions', function (req, res) {
-
-    //return the user all the questions in the QUESTIONS array
-    res.send("Hello World from route 3!")
-})
-
-app.get("/submissions", function (req, res) {
-    // return the users submissions for this problem
-    res.send("Hello World from route 4!")
 });
 
 
+app.get('/questions', function (req, res) {
+    //return the user all the questions in the QUESTIONS array
+    res.status(200).json(QUESTIONS);
+})
+
+// Add new problem route (only accessible to admins)
+app.post('/questions', function (req, res) {
+    // Decode the request body
+    const { title, description, testCases } = req.body;
+
+    // Check if the user is an admin
+    // if (req.user.role !== 'admin') {
+    //     return res.status(403).json({ error: 'Only admins can add new problems' });
+    // }
+
+    // Create a new problem object
+    const newProblem = { title, description, testCases };
+
+    // Store the new problem in the PROBLEMS array
+    QUESTIONS.push(newProblem);
+
+    // Return a success response
+    res.status(200).json({ message: 'New problem added successfully' });
+});
+
+app.get("/submissions", function (req, res) {
+    // return the users submissions for this problem
+    res.status(200).json(SUBMISSION);
+});
+
 app.post("/submissions", function (req, res) {
-    // let the user submit a problem, randomly accept or reject the solution
-    // Store the submission in the SUBMISSION array above
+    // Decode the request body
+    const { userId, questionId, code } = req.body;
+
+    // Generate a random boolean value to determine acceptance or rejection
+    const isAccepted = Math.random() < 0.5; // Adjust the probability as needed
+
+    // Create a new submission object
+    const submission = {
+        userId,
+        questionId,
+        code,
+        status: isAccepted ? 'accepted' : 'rejected'
+    };
+
+    // Store the submission in the SUBMISSIONS array
+    SUBMISSION.push(submission);
+
+    // Return a success response
+    res.status(200).json({ message: 'Submission successful' });
     res.send("Hello World from route 4!")
 });
 
 app.get('/users', function (req, res) {
     res.status(200).json(USERS);
 });
-
-
-// leaving as hard todos
-// Create a route that lets an admin add a new problem
-// ensure that only admins can do that.
 
 app.listen(port, function () {
     console.log(`Example app listening on port ${port}`)
